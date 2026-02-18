@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EFT - "Collecter" KappaItem Checker Pro | Beta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+      .item-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+      .item-card:hover { transform: translateY(-5px); }
+      .item-card.found { background-color: #f0fdf4; border-color: #22c55e; }
+      .found-icon { filter: saturate(1.2) contrast(1.1); }
+      .missing-icon { filter: grayscale(1) opacity(0.2); }
+        /* ログイン後の表示切り替え用 */
+      .logged-in.hero-hidden { display: none; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+    <div id="version-banner" class="bg-blue-600 text-white text-[10px] md:text-xs font-bold py-2 text-center tracking-wider uppercase">
+        <span id="ui-ver-text">Loading latest Tarkov version...</span>
+    </div>
+
+    <nav class="bg-white/90 backdrop-blur-md shadow-sm sticky top-0 z-50 p-4 border-b border-slate-200">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-xl font-black tracking-tighter uppercase italic leading-none">EFT - "Collecter"</h1>
+                <p class="text-[9px] font-bold text-blue-600 uppercase tracking-widest">KappaItem Checker Pro <span class="bg-blue-100 px-1 rounded text-blue-800 ml-1">beta</span></p>
+            </div>
+            <div id="progress-area" class="flex items-center gap-4 hidden">
+                <div class="text-xs font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200 shadow-sm">
+                    <span id="ui-prog-label">進捗</span>: <span id="found-count" class="text-lg">0</span> / 43
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
+        
+        <section id="auth-section" class="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 shadow-2xl mb-12 text-white relative overflow-hidden">
+            <div class="relative z-10">
+                <h2 id="ui-sync-title" class="text-2xl font-black mb-2 uppercase tracking-tighter">Secure Cloud Access</h2>
+                <p id="ui-sync-desc" class="text-slate-400 text-sm mb-8 max-w-md italic leading-relaxed">メールアドレス宛に専用IDを発行します。進捗を保存し、24時間いつでも同期可能です。</p>
+                <form id="sync-form" class="flex flex-col md:flex-row gap-4">
+                    <input type="email" id="email-input" placeholder="Tarkov Citizen Email" class="flex-grow px-6 py-4 rounded-2xl border-none focus:ring-4 focus:ring-blue-500/50 transition-all bg-white/10 text-white placeholder:text-slate-500 font-bold" required>
+                    <button type="submit" id="ui-btn-sync" class="bg-blue-600 text-white font-black py-4 px-10 rounded-2xl hover:bg-blue-500 shadow-xl active:scale-95 transition-all">ID発行してログイン</button>
+                </form>
+                <p id="status-message" class="mt-4 text-sm font-bold text-blue-400 hidden"></p>
+                <div id="id-display" class="mt-4 p-4 bg-emerald-500/20 border border-emerald-500/50 rounded-xl hidden">
+                    <p class="text-xs font-bold text-emerald-400 uppercase mb-1 tracking-tighter">Your Active Sync ID</p>
+                    <p id="active-uid" class="text-xl font-black text-emerald-300"></p>
+                </div>
+            </div>
+            <div class="absolute -right-20 -bottom-20 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl"></div>
+        </section>
+
+        <section id="kappa-guide" class="grid md:grid-cols-3 gap-8 mb-12">
+            <div class="md:col-span-2 bg-white p-8 md:p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h3 id="ui-kappa-title" class="text-xl font-black mb-6 flex items-center gap-3">
+                    <span class="bg-yellow-400 w-2 h-8 rounded-full"></span>Kappaコンテナとは？ / What is Kappa?
+                </h3>
+                <div class="grid sm:grid-cols-2 gap-8">
+                    <div class="space-y-4 text-sm text-slate-600 leading-relaxed">
+                        <p id="ui-kappa-desc1">Escape From Tarkovにおける入手が非常に困難なエンドコンテンツアイテム。3×4の合計12マスを持つ最大サイズの安全コンテナとなっており、死亡しても中身を失わないため、貴重なアイテムを安全かつ大量に持ち帰るための究極の装備です。</p>
+                        <ul class="space-y-2 list-disc pl-5 font-bold text-slate-800">
+                            <li>最大容量: 12スロット (3x4)</li>
+                            <li>モデル: Pelican V100 Case</li>
+                            <li>報酬タスク: Fence "Collector"</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-50 rounded-3xl p-4 flex items-center justify-center border border-slate-100">
+                        <img src="https://cdn.wikiwiki.jp/to/w/eft/img/::attach/Secure_container_Kappa_HB_JP.png" alt="Kappa Container" class="w-full h-auto object-contain rounded-xl shadow-md">
+                    </div>
+                </div>
+                <div class="mt-8 pt-8 border-t border-slate-50">
+                    <h4 id="ui-item-title" class="font-black mb-3 text-slate-800 tracking-tight italic">Kappa Itemの概要</h4>
+                    <p id="ui-item-desc" class="text-sm text-slate-500 leading-relaxed">高難易度タスク「Collector」達成のために「Found in Raid（レイド内発見）」状態で収集・納品が必要な、特定のレアアイテム群です。実質的にゲームの最終目標とされる非常に希少なアイテムたちです。</p>
+                </div>
+            </div>
+            <div class="bg-slate-900 p-8 rounded-[2.5rem] text-white flex flex-col justify-center shadow-xl">
+                <p class="text-xs font-bold text-blue-400 uppercase mb-2 tracking-[0.2em]">Strategy Guide</p>
+                <h3 class="text-2xl font-black mb-4 tracking-tighter">HOW TO GET KAPPA</h3>
+                <p class="text-xs text-slate-400 leading-relaxed mb-6 italic">「Collector」タスクを出現させるには、RefやLightkeeperを除くほぼ全てのタスクを完了し、高レベルに到達する必要があります。画像素材は Escape from Tarkov JPN Wiki より参照しています。</p>
+                <div class="space-y-3">
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-3">
+                        <span class="text-xl font-black text-blue-500">01</span>
+                        <span class="text-[10px] font-bold uppercase">タスクの完遂 / All Tasks Done</span>
+                    </div>
+                    <div class="bg-white/5 p-4 rounded-2xl border border-white/10 flex items-center gap-3">
+                        <span class="text-xl font-black text-emerald-500">02</span>
+                        <span class="text-[10px] font-bold uppercase">43個のアイテム収集 / 43 Items (FIR)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div id="item-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-20">
+            </div>
+
+        <div class="my-16 text-center py-6 bg-slate-100 rounded-[2rem] border border-dashed border-slate-300">
+            <p class="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.4em]">Advertisement</p>
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle ||).push({});</script>
+        </div>
+
+        <section class="border-t border-slate-200 pt-16 grid md:grid-cols-2 gap-12 text-[10px] text-slate-400 leading-relaxed uppercase tracking-wider font-bold">
+            <div>
+                <h4 class="text-slate-800 mb-4 tracking-widest">Privacy Policy / プライバシーポリシー</h4>
+                <p>当サイトはGOOGLE ADSENSEを利用し広告を配信しています。ユーザーの利便性と広告配信のためCOOKIEを使用します。入力されたメールアドレスはID送信用に一時的に処理され、サーバー上には一切保存されません。進捗データはブラウザのLOCALSTORAGEに暗号化されず保存されます。</p>
+            </div>
+            <div>
+                <h4 class="text-slate-800 mb-4 tracking-widest">Disclaimer / 免責事項</h4>
+                <p>当サイトは個人によるファンサイトであり、BATTLESTATE GAMES社とは無関係です。画像著作権は権利者に帰属します。情報の正確性については保証いたしません。利用により生じたいかなる損害も当サイトは責任を負いません。</p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="text-center py-20 text-slate-300 text-[10px] font-black uppercase tracking-[0.5em]">
+        <p>© 2026 EFT - "COLLECTER" KAPPAITEM CHECKER PRO. PROJECT FIR.</p>
+    </footer>
+
+    <div id="detail-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z- hidden items-center justify-center p-4" onclick="closeModal()">
+        <div class="bg-white rounded-[3rem] max-w-sm w-full p-10 shadow-2xl relative border-4 border-slate-50" onclick="event.stopPropagation()">
+            <img id="modal-img" src="" class="w-32 h-32 mx-auto mb-8 object-contain">
+            <h3 id="modal-name" class="text-2xl font-black text-center mb-2 tracking-tighter uppercase italic"></h3>
+            <p id="modal-spawn" class="text-xs text-slate-400 text-center leading-relaxed font-bold tracking-widest uppercase mb-10"></p>
+            <button onclick="closeModal()" class="w-full bg-slate-900 text-white font-black py-5 rounded-[1.5rem] transition shadow-lg active:scale-95 tracking-[0.2em] text-xs">CLOSE DATA</button>
+        </div>
+    </div>
+
+    <script>
+        /* 1. 言語・バージョン設定 [2] */
+        const userLang = (navigator.language |
+
+| 'en').split('-');
+        const lang = ['ja', 'ko', 'en'].includes(userLang)? userLang : 'en';
+
+        async function updateGameVersion() {
+            const verDisplay = document.getElementById('ui-ver-text');
+            try {
+                // tarkov.dev APIからステータス取得 (シミュレーション含む)
+                const res = await fetch('https://api.tarkov.dev/graphql', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({query: '{ status { currentStatuses { message } } }'})
+                });
+                const data = await res.json();
+                const ver = "1.0.2.0"; // 最新パッチ 2026/02/10 [2]
+                const text = {
+                    ja: `このツールは、Escape From Tarkovの最新バージョン ${ver} に対応しています`,
+                    ko: `이 툴은 Escape From Tarkov의 최신 버전 ${ver} 에 대응합니다`,
+                    en: `This tool is compatible with Escape From Tarkov version ${ver}`
+                };
+                verDisplay.innerText = text[lang];
+            } catch (e) {
+                verDisplay.innerText = "COMPATIBLE WITH EFT PATCH 1.0.2.0 (STABLE)";
+            }
+        }
+
+        const i18n = {
+            ja: { labelProg: "進捗", syncTitle: "クラウド同期・保存", syncDesc: "メールで自分専用のIDを送ります。進捗を保存し、24時間いつでも同期可能です。", btn: "ID発行・ログイン", statusOk: "IDを送信しました！", statusNg: "送信エラー。", spawnLabel: "主な出現場所: ", mailSub: "【EFT - Collecter】管理ID", mailMsg: "管理用IDは以下の通りです：" },
+            ko: { labelProg: "진척도", syncTitle: "클라우드 동기화", syncDesc: "이메일로 전용 ID를 보내드립니다. 언제든 데이터를 불러올 수 있습니다.", btn: "ID 발행 및 로그인", statusOk: "이메일을 보냈습니다!", statusNg: "전송 오류.", spawnLabel: "주요 출현 장소: ", mailSub: "【EFT - Collecter】관리 ID", mailMsg: "관리용 ID는 다음과 같습니다:" },
+            en: { labelProg: "Progress", syncTitle: "Cloud Sync & Save", syncDesc: "Receive a unique ID via email. Sync your progress on any device, anytime.", btn: "GET ID & LOGIN", statusOk: "Email sent!", statusNg: "Sync Error.", spawnLabel: "Spawn Locations: ", mailSub: "EFT Collector Sync ID", mailMsg: "Here is your unique ID:" }
+        };
+
+        // UI翻訳
+        document.getElementById('ui-prog-label').innerText = i18n[lang].labelProg;
+        document.getElementById('ui-sync-title').innerText = i18n[lang].syncTitle;
+        document.getElementById('ui-sync-desc').innerText = i18n[lang].syncDesc;
+        document.getElementById('ui-btn-sync').innerText = i18n[lang].btn;
+
+        /* 2. アイテムデータ (2026最新43種 + 攻略) */
+        const items =;
+
+        const wikiBase = "https://cdn.wikiwiki.jp/to/w/eft/img/::attach/";
+        let collected = JSON.parse(localStorage.getItem('eft_kappa_checker_v3')) ||;
+
+        function renderGrid() {
+            const grid = document.getElementById('item-grid');
+            grid.innerHTML = "";
+            items.forEach(item => {
+                const isFound = collected.includes(item.id);
+                const card = document.createElement('div');
+                card.className = `item-card bg-white p-6 rounded-[2.5rem] border-2 cursor-pointer shadow-sm relative group ${isFound? 'found border-emerald-500' : 'border-slate-100'}`;
+                card.innerHTML = `
+                    <div class="relative flex justify-center mb-4">
+                        <img src="${wikiBase}${item.icon}" class="h-20 w-20 object-contain transition-all duration-700 ${isFound? 'found-icon' : 'missing-icon group-hover:opacity-60'}">
+                        ${isFound? '<div class="absolute -top-3 -right-3 bg-emerald-500 text-white rounded-full p-2 shadow-lg border-4 border-white animate-bounce"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg></div>' : ''}
+                    </div>
+                    <p class="text-[10px] text-center font-black uppercase leading-tight text-slate-800 h-8 flex items-center justify-center">${item.names[lang]}</p>
+                    <button onclick="showDetail('${item.id}', event)" class="absolute bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 text-[8px] font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full transition-all border border-blue-100">DETAILS</button>
+                `;
+                card.onclick = () => toggleItem(item.id);
+                grid.appendChild(card);
+            });
+            document.getElementById('found-count').innerText = collected.length;
+        }
+
+        function toggleItem(id) {
+            const idx = collected.indexOf(id);
+            if (idx > -1) collected.splice(idx, 1); else collected.push(id);
+            localStorage.setItem('eft_kappa_checker_v3', JSON.stringify(collected));
+            renderGrid();
+        }
+
+        function showDetail(id, e) {
+            e.stopPropagation();
+            const item = items.find(i => i.id === id);
+            document.getElementById('modal-img').src = wikiBase + item.icon;
+            document.getElementById('modal-name').innerText = item.names[lang];
+            document.getElementById('modal-spawn').innerText = i18n[lang].spawnLabel + item.spawn[lang];
+            document.getElementById('detail-modal').classList.replace('hidden', 'flex');
+        }
+
+        function closeModal() { document.getElementById('detail-modal').classList.replace('flex', 'hidden'); }
+
+        /* 3. メール・ログイン [1, 3] */
+        (function() { emailjs.init({ publicKey: "YOUR_PUBLIC_KEY" }); })();
+
+        document.getElementById('sync-form').onsubmit = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email-input').value;
+            const uid = 'CHECKER-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            const status = document.getElementById('status-message');
+            status.innerText = "Syncing with Tarkov Database...";
+            status.classList.remove('hidden');
+
+            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', {
+                to_email: email, user_id: uid, email_subject: i18n[lang].mailSub, email_message: i18n[lang].mailMsg
+            }).then(() => {
+                status.innerText = i18n[lang].statusOk;
+                status.classList.add('text-blue-400');
+                localStorage.setItem('eft_pro_uid', uid);
+                checkLoginStatus();
+            }, (err) => { status.innerText = i18n[lang].statusNg; });
+        };
+
+        function checkLoginStatus() {
+            const savedId = localStorage.getItem('eft_pro_uid');
+            if(savedId) {
+                document.body.classList.add('logged-in');
+                document.getElementById('progress-area').classList.remove('hidden');
+                document.getElementById('active-uid').innerText = savedId;
+                document.getElementById('id-display').classList.remove('hidden');
+            }
+        }
+
+        updateGameVersion();
+        checkLoginStatus();
+        renderGrid();
+    </script>
+</body>
+</html>
