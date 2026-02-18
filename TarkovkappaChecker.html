@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EFT Collector Tracker 2026</title>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+     .item-card { transition: all 0.2s ease-out; }
+     .item-card.found { background-color: #ecfdf5; border-color: #10b981; }
+     .found-icon { filter: grayscale(40%); opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+
+    <nav class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 p-4 border-b border-slate-100">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 id="ui-nav-title" class="text-xl font-black text-slate-900 tracking-tighter uppercase">EFT Collector</h1>
+            <div class="text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full border border-emerald-100">
+                <span id="ui-progress-label">進捗</span>: <span id="found-count">0</span> / 43
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto p-4 md:p-8">
+        <div class="mb-8 text-center bg-gray-100 py-2 rounded-lg border border-dashed border-gray-300">
+            <p class="text-[9px] text-gray-400 font-bold mb-1 uppercase tracking-widest">Advertisement</p>
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle |
+
+|).push({});</script>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/60 border border-slate-100 mb-10">
+            <h2 id="ui-sync-title" class="text-xl font-bold mb-2">データの同期・保存</h2>
+            <p id="ui-sync-desc" class="text-sm text-slate-500 mb-6 leading-relaxed">メールアドレスにあなた専用のIDを送信します。別のデバイスでも進捗を再開できます。</p>
+            <form id="sync-form" class="flex flex-col md:flex-row gap-3">
+                <input type="email" id="email-input" placeholder="Email Address" class="flex-grow px-6 py-4 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all bg-slate-50 font-medium" required>
+                <button type="submit" id="ui-btn-sync" class="bg-slate-900 text-white font-bold py-4 px-10 rounded-2xl hover:bg-blue-600 shadow-xl active:scale-95 transition-all duration-200">IDを発行する</button>
+            </form>
+            <p id="status-message" class="mt-4 text-sm font-bold hidden"></p>
+        </div>
+
+        <div id="item-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            </div>
+
+        <div class="mt-12 text-center bg-gray-100 py-2 rounded-lg border border-dashed border-gray-300">
+            <p class="text-[9px] text-gray-400 font-bold mb-1 uppercase tracking-widest">Advertisement</p>
+            <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-XXXXXXXXXXXXXXXX" data-ad-slot="XXXXXXXXXX" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle |
+
+|).push({});</script>
+        </div>
+    </main>
+
+    <footer class="text-center py-10 text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+        <p>© 2026 EFT Collector Tracker. Images from wikiwiki.jp/eft/</p>
+    </footer>
+
+    <script>
+        /* 1. 言語判定・翻訳設定 [3, 5, 10] */
+        const userLang = (navigator.language |
+
+| 'en').split('-');
+        const lang = ['ja', 'ko', 'en'].includes(userLang)? userLang : 'en';
+
+        const i18n = {
+            ja: { 
+                title: "EFT Collector 管理", labelProgress: "進捗", syncTitle: "データの同期", syncDesc: "進捗を保存するためのIDをメールで送信します。個人情報は保持しません。", btn: "IDを発行する", statusOk: "日本語でメールを送信しました！", statusNg: "送信エラーです。",
+                mailSub: "【EFT Collector】あなた専用の管理IDが届きました",
+                mailMsg: "EFT Collector Trackerをご利用いただきありがとうございます。あなたの進捗を別のデバイスで引き継ぐためのIDは以下の通りです："
+            },
+            ko: { 
+                title: "EFT Collector 관리", labelProgress: "진척도", syncTitle: "데이터 동기화", syncDesc: "진척도를 저장하기 위한 ID를 이메일로 보내드립니다. 개인정보는 저장하지 않습니다.", btn: "ID 발행하기", statusOk: "한국어로 이메일을 보냈습니다!", statusNg: "전송 오류가 발생했습니다.",
+                mailSub: "【EFT Collector】귀하의 전용 관리 ID가 도착했습니다",
+                mailMsg: "EFT Collector Tracker를 이용해 주셔서 감사합니다. 귀하의 진척도를 다른 기기에서 이어받기 위한 ID는 다음과 같습니다:"
+            },
+            en: { 
+                title: "EFT Collector Tracker", labelProgress: "Progress", syncTitle: "Sync Data", syncDesc: "We will send a unique ID to your email to save your progress.", btn: "Get ID Now", statusOk: "Confirmation email sent in English!", statusNg: "Failed to send email.",
+                mailSub: "Your EFT Collector Tracker ID is here",
+                mailMsg: "Thank you for using EFT Collector Tracker. Here is your unique ID to resume your progress on any device:"
+            }
+        };
+
+        // UI翻訳の適用
+        document.getElementById('ui-nav-title').innerText = i18n[lang].title;
+        document.getElementById('ui-progress-label').innerText = i18n[lang].labelProgress;
+        document.getElementById('ui-sync-title').innerText = i18n[lang].syncTitle;
+        document.getElementById('ui-sync-desc').innerText = i18n[lang].syncDesc;
+        document.getElementById('ui-btn-sync').innerText = i18n[lang].btn;
+
+        /* 2. アイテムデータ (最新43種類) [3, 2, 4] */
+        const items =;
+
+        const wikiBase = "https://cdn.wikiwiki.jp/to/w/eft/img/::attach/";
+        let collected = JSON.parse(localStorage.getItem('eft_collected_v2')) ||;
+
+        // グリッド生成ロジック
+        const grid = document.getElementById('item-grid');
+        items.forEach(item => {
+            const isFound = collected.includes(item.id);
+            const card = document.createElement('div');
+            card.className = `item-card bg-white p-5 rounded-[2rem] border-2 cursor-pointer shadow-sm hover:shadow-xl active:scale-95 ${isFound? 'found border-emerald-500' : 'border-slate-100'}`;
+            card.innerHTML = `
+                <div class="relative flex justify-center mb-4">
+                    <img src="${wikiBase}${item.icon}" class="h-16 w-16 object-contain ${isFound? 'found-icon' : ''}">
+                    ${isFound? '<div class="absolute bottom-0 right-0 bg-emerald-500 text-white rounded-full p-1 shadow-lg"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg></div>' : ''}
+                </div>
+                <p class="text-[10px] text-center font-black uppercase leading-tight h-8 flex items-center justify-center">${item.names[lang]}</p>
+            `;
+            card.onclick = () => {
+                const idx = collected.indexOf(item.id);
+                if (idx > -1) collected.splice(idx, 1); else collected.push(item.id);
+                localStorage.setItem('eft_collected_v2', JSON.stringify(collected));
+                render(); // 再描画
+            };
+            grid.appendChild(card);
+        });
+
+        function render() {
+            location.reload(); // 簡易的な更新
+        }
+        document.getElementById('found-count').innerText = collected.length;
+
+        /* 3. メール送信ロジック (EmailJS 多言語対応)  */
+        (function() { emailjs.init({ publicKey: "YOUR_PUBLIC_KEY" }); })();
+
+        document.getElementById('sync-form').onsubmit = function(e) {
+            e.preventDefault();
+            const email = document.getElementById('email-input').value;
+            const uid = 'EFT-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            const status = document.getElementById('status-message');
+            
+            status.innerText = "Processing...";
+            status.classList.remove('hidden', 'text-emerald-600', 'text-red-600');
+
+            const params = {
+                to_email: email,
+                user_id: uid,
+                email_subject: i18n[lang].mailSub,
+                email_message: i18n[lang].mailMsg
+            };
+
+            emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', params)
+               .then(() => {
+                    status.innerText = i18n[lang].statusOk + " ID: " + uid;
+                    status.classList.add('text-emerald-600');
+                }, (err) => {
+                    status.innerText = i18n[lang].statusNg;
+                    status.classList.add('text-red-600');
+                    console.error(err);
+                });
+        };
+    </script>
+</body>
+</html>
